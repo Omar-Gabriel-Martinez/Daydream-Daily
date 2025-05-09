@@ -28,7 +28,7 @@ class LoginActivity : AppCompatActivity() {
 
             if (storedPassword == password) {
                 Toast.makeText(this, "Bienvenido $username", Toast.LENGTH_SHORT).show()
-                startActivity(Intent(this, MainActivity::class.java))
+                startActivity(Intent(this, MoodActivity::class.java))
                 finish()
             } else {
                 Toast.makeText(this, "Usuario o contraseña incorrectos", Toast.LENGTH_SHORT).show()

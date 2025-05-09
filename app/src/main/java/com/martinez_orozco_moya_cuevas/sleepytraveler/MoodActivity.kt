@@ -15,11 +15,11 @@ class MoodActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Comprobación de si ya se abrió hoy
         val prefs = getSharedPreferences("moodPrefs", MODE_PRIVATE)
         val ultimaFecha = prefs.getString("ultima_fecha", null)
         val hoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
 
+        // Validar si ya se registró emoción hoy
         if (ultimaFecha == hoy) {
             Toast.makeText(this, "Ya registraste tu emoción hoy.", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, MainActivity::class.java))
@@ -27,59 +27,49 @@ class MoodActivity : AppCompatActivity() {
             return
         }
 
-
         setContentView(R.layout.activity_mood)
 
+        // Obtener el nombre del usuario de SharedPreferences (asumiendo que lo guardas aquí)
+        val nombreUsuario = prefs.getString("nombre_usuario", "Usuario")
+
+        val tvSaludoUsuario = findViewById<TextView>(R.id.tvSaludoUsuario)
+        tvSaludoUsuario.text = "Hola, $nombreUsuario"
+
         val tvFecha = findViewById<TextView>(R.id.tvFecha)
-        val tvValor = findViewById<TextView>(R.id.tvValorSeleccionado)
-        val seekBar = findViewById<SeekBar>(R.id.seekBar)
-        val listView = findViewById<ListView>(R.id.listaEmociones)
-        val btnGuardar = findViewById<Button>(R.id.btnGuardarEmocion)
+        tvFecha.text = hoy // Establecer fecha actual
 
-        tvFecha.text = "Fecha: $hoy"
-
-        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
-                valorSeleccionado = progress + 1
-                tvValor.text = "Valor seleccionado: $valorSeleccionado"
-            }
-
-            override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
-        })
-
+        // Aquí implementa la selección de emociones y lógica adicional
+        val spinnerEmociones = findViewById<Spinner>(R.id.spinnerEmociones)
         val emociones = listOf(
             "Feliz", "Triste", "Enojado",
             "Ansioso", "Estresado", "Aburrido",
             "Emocionado", "Nostálgico"
         )
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, emociones)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerEmociones.adapter = adapter
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, emociones)
-        listView.adapter = adapter
+        spinnerEmociones.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>, view: android.view.View, position: Int, id: Long) {
+                emocionSeleccionada = emociones[position]
+                valorSeleccionado = position + 1
+            }
 
-
-        listView.setOnItemClickListener { _, _, position, _ ->
-            emocionSeleccionada = emociones[position]
-            Toast.makeText(this, "Emoción seleccionada: $emocionSeleccionada", Toast.LENGTH_SHORT).show()
+            override fun onNothingSelected(parent: AdapterView<*>) {
+                emocionSeleccionada = emociones[0]
+                valorSeleccionado = 1
+            }
         }
 
-        btnGuardar.setOnClickListener {
-            if (emocionSeleccionada == null) {
-                Toast.makeText(this, "Selecciona una emoción primero", Toast.LENGTH_SHORT).show()
-            } else {
+        val btnGuardarEmocion = findViewById<Button>(R.id.btnGuardarEmocion)
+        btnGuardarEmocion.setOnClickListener {
+            prefs.edit().putString("ultima_fecha", hoy).apply()
+            prefs.edit().putString("emocion", emocionSeleccionada).apply()
+            prefs.edit().putInt("valor_emocion", valorSeleccionado).apply()
 
-                prefs.edit().putString("ultima_fecha", hoy).apply()
-
-                Toast.makeText(
-                    this,
-                    "Guardado: $emocionSeleccionada ($valorSeleccionado)",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-                finish()
-            }
+            Toast.makeText(this, "Emoción guardada: $emocionSeleccionada", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
     }
 }

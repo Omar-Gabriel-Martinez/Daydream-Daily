@@ -5,6 +5,11 @@
     android:orientation="vertical"
     android:padding="24dp">
 
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="250dp"
+        android:src="@drawable/login"
+        />
     <EditText
         android:id="@+id/etUsername"
         android:layout_width="match_parent"

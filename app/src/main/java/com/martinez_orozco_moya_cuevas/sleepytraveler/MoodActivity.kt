@@ -1,6 +1,7 @@
 package com.martinez_orozco_moya_cuevas.sleepytraveler
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +14,7 @@ class MoodActivity : AppCompatActivity() {
     private var valorSeleccionado: Int = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         super.onCreate(savedInstanceState)
 
         val prefs = getSharedPreferences("moodPrefs", MODE_PRIVATE)

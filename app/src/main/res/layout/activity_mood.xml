@@ -27,13 +27,22 @@
             android:textSize="20sp"
             android:layout_margin="16dp"/>
 
+        <EditText
+            android:id="@+id/etTituloEmocion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Título de tu día"
+            android:inputType="text"
+            android:maxLines="1"
+            android:layout_marginBottom="8dp" />
+
 
         <!-- Entrada de texto para describir cómo se siente -->
         <EditText
             android:id="@+id/etDescripcionEmocion"
             android:layout_width="match_parent"
             android:layout_height="120dp"
-            android:hint="Escribe cómo te sientes aquí"
+            android:hint="Escribe cómo estuvo tu día aquí"
             android:padding="12dp"
             android:inputType="textMultiLine"
             android:gravity="top|start"

@@ -10,19 +10,22 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.martinez_orozco_moya_cuevas.sleepytraveler.data.MoodDatabase
+import com.martinez_orozco_moya_cuevas.sleepytraveler.data.MoodEntry
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.Calendar
 
 class MoodActivity : AppCompatActivity() {
 
     private var emocionSeleccionada: String? = null
-    private var valorSeleccionado: Int = 1
+    private var valorSeleccionado: Int = 1  // Valor inicial
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Bloquea orientación vertical
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         super.onCreate(savedInstanceState)
-        //Para el saludo
+
+        // Saludo dinámico
         val hora = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
         val saludo = when (hora) {
             in 6..11   -> "Buenos días"
@@ -31,11 +34,11 @@ class MoodActivity : AppCompatActivity() {
             else       -> "Hola"
         }
 
-
+        // SharedPreferences y fecha de hoy
         val prefs = getSharedPreferences("moodPrefs", MODE_PRIVATE)
+        val avui = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
         val ultimaFecha = prefs.getString("ultima_fecha", null)
-        val hoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
-        if (ultimaFecha == hoy) {
+        if (ultimaFecha == avui) {
             Toast.makeText(this, "Ya registraste tu emoción hoy.", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, MainActivity::class.java))
             finish()
@@ -44,24 +47,30 @@ class MoodActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_mood)
 
-        // Saludo y fecha
+        // Saludo y fecha en UI
         val nombreUsuario = prefs.getString("nombre_usuario", "Usuario")
-        //findViewById<TextView>(R.id.tvSaludoUsuario).text = "Hola, $nombreUsuario"
         findViewById<TextView>(R.id.tvSaludoUsuario).text = "$saludo, $nombreUsuario!"
-        findViewById<TextView>(R.id.tvFecha).text = hoy
+        findViewById<TextView>(R.id.tvFecha).text = avui
 
-        // Spinner de emociones (igual que antes) …
+        // Spinner de emociones
         val spinnerEmociones = findViewById<Spinner>(R.id.spinnerEmociones)
         val emociones = listOf(
             "Feliz", "Triste", "Enojado", "Ansioso",
             "Estresado", "Aburrido", "Emocionado", "Nostálgico"
         )
         val adapter = android.widget.ArrayAdapter(
-            this, android.R.layout.simple_spinner_item, emociones
+            this,
+            android.R.layout.simple_spinner_item,
+            emociones
         ).also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         spinnerEmociones.adapter = adapter
         spinnerEmociones.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>, view: android.view.View, position: Int, id: Long) {
+            override fun onItemSelected(
+                parent: android.widget.AdapterView<*>,
+                view: android.view.View,
+                position: Int,
+                id: Long
+            ) {
                 emocionSeleccionada = emociones[position]
             }
             override fun onNothingSelected(parent: android.widget.AdapterView<*>) {
@@ -69,7 +78,7 @@ class MoodActivity : AppCompatActivity() {
             }
         }
 
-        // SeekBar y valor dinámico (igual que antes) …
+        // SeekBar y TextView de valor
         val seekBar = findViewById<SeekBar>(R.id.seekBar)
         val tvValorSeleccionado = findViewById<TextView>(R.id.tvValorSeleccionado)
         seekBar.progress = valorSeleccionado
@@ -83,15 +92,16 @@ class MoodActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(sb: SeekBar) {}
         })
 
-        // Referencias a los EditText
+        // EditTexts
         val etTitulo = findViewById<EditText>(R.id.etTituloEmocion)
         val etDescripcion = findViewById<EditText>(R.id.etDescripcionEmocion)
 
-        // Botón guardar con validaciones
+        // Botón guardar con validaciones y persistencia
         findViewById<Button>(R.id.btnGuardarEmocion).setOnClickListener {
             val titulo = etTitulo.text.toString().trim()
             val descripcion = etDescripcion.text.toString().trim()
 
+            // Validaciones
             if (titulo.length < 5) {
                 etTitulo.error = "El título debe tener al menos 5 caracteres"
                 etTitulo.requestFocus()
@@ -103,14 +113,31 @@ class MoodActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            // Guardamos sólo si pasa las validaciones
+            // Guardado en SharedPreferences
             prefs.edit()
-                .putString("ultima_fecha", hoy)
+                .putString("ultima_fecha", avui)
                 .putString("emocion_titulo", titulo)
                 .putString("emocion", emocionSeleccionada)
                 .putInt("valor_emocion", valorSeleccionado)
                 .putString("emocion_descripcion", descripcion)
                 .apply()
+
+            // Creación del MoodEntry
+            val entry = MoodEntry(
+                date = avui,
+                title = titulo,
+                emotion = emocionSeleccionada ?: "",
+                value = valorSeleccionado,
+                description = descripcion
+            )
+
+            // Inserción en Room en segundo plano
+            Thread {
+                MoodDatabase
+                    .getInstance(this)
+                    .moodDao()
+                    .insert(entry)
+            }.start()
 
             Toast.makeText(
                 this,
@@ -118,8 +145,8 @@ class MoodActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT
             ).show()
 
-            val intent = Intent(this, MoodActivity::class.java)
-            startActivity(intent)
+            // Regresa o reinicia Activity según tu flujo
+            startActivity(Intent(this, MainActivity::class.java))
             finish()
         }
     }
